@@ -1,0 +1,228 @@
+<!-- All Modal Dialogs -->
+
+<!-- Serial Config Modal -->
+<div id="serialConfigModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span class="modal-icon">🔌</span>
+                    <div class="modal-title-text">
+                        <h3>Serial Configuration</h3>
+                        <p>Configure your serial port bridge</p>
+                    </div>
+                </div>
+                <button class="modal-close" type="button">
+                    <span>✕</span>
+                </button>
+            </div>
+            <form id="serialConfigForm" class="modal-form">
+                <div class="modal-body">
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span class="section-icon">📝</span>
+                            Basic Information
+                        </div>
+                        <div class="form-group">
+                            <label for="serialName" class="form-label">Configuration Name</label>
+                            <input type="text" id="serialName" name="name" required 
+                                   placeholder="e.g., Arduino Sensor Bridge" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span class="section-icon">🔌</span>
+                            Serial Port Settings
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="serialPortSelect" class="form-label">Serial Port</label>
+                                <select id="serialPortSelect" name="serialPort" required class="form-control">
+                                    <option value="">Select a port...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="serialBaudRate" class="form-label">Baud Rate</label>
+                                <select id="serialBaudRate" name="baudRate" required class="form-control">
+                                    <option value="1200">1200</option>
+                                    <option value="2400">2400</option>
+                                    <option value="4800">4800</option>
+                                    <option value="9600" selected>9600</option>
+                                    <option value="14400">14400</option>
+                                    <option value="19200">19200</option>
+                                    <option value="28800">28800</option>
+                                    <option value="38400">38400</option>
+                                    <option value="57600">57600</option>
+                                    <option value="115200">115200</option>
+                                    <option value="230400">230400</option>
+                                    <option value="460800">460800</option>
+                                    <option value="921600">921600</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span class="section-icon">📡</span>
+                            TCP Output Settings
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="serialTcpHost" class="form-label">TCP Output Host</label>
+                                <input type="text" id="serialTcpHost" name="tcpOutHost" 
+                                       required value="127.0.0.1" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="serialTcpPort" class="form-label">TCP Output Port</label>
+                                <input type="number" id="serialTcpPort" name="tcpOutPort" 
+                                       required value="4001" min="1" max="65535" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="window.app?.closeModal('serialConfigModal')">
+                        <span class="btn-icon">❌</span>
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-pulse">
+                        <span class="btn-icon">💾</span>
+                        <span>Save Configuration</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- IP Config Modal -->
+<div id="ipConfigModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span class="modal-icon">🌐</span>
+                    <div class="modal-title-text">
+                        <h3>Network Configuration</h3>
+                        <p>Configure your network bridge connection</p>
+                    </div>
+                </div>
+                <button class="modal-close" type="button">
+                    <span>✕</span>
+                </button>
+            </div>
+            <form id="ipConfigForm" class="modal-form">
+                <div class="modal-body">
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span class="section-icon">📝</span>
+                            Basic Information
+                        </div>
+                        <div class="form-group">
+                            <label for="ipName" class="form-label">Configuration Name</label>
+                            <input type="text" id="ipName" name="name" required 
+                                   placeholder="e.g., TCP Client Bridge" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span class="section-icon">🌐</span>
+                            Connection Settings
+                        </div>
+                        <div class="form-group">
+                            <label for="connectionMode" class="form-label">Connection Mode</label>
+                            <div class="connection-mode-selector">
+                                <select id="connectionMode" name="connectionMode" required class="form-control">
+                                    <option value="server">🏢 TCP Server (Listen for connections)</option>
+                                    <option value="client">🔗 TCP Client (Connect to server)</option>
+                                </select>
+                            </div>
+                            <small class="form-help">Choose server mode to listen for incoming connections, or client mode to connect to an external server.</small>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ipHost" class="form-label">IP Address</label>
+                                <input type="text" id="ipHost" name="ipHost" required 
+                                       value="127.0.0.1" placeholder="127.0.0.1" class="form-control">
+                                <small id="ipHostHelp" class="form-help">Server mode: IP to listen on (use 0.0.0.0 for all interfaces). Client mode: IP to connect to.</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="ipPort" class="form-label">Port</label>
+                                <input type="number" id="ipPort" name="ipPort" required 
+                                       value="3001" min="1" max="65535" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="section-title">
+                            <span class="section-icon">📡</span>
+                            TCP Output Settings
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ipTcpHost" class="form-label">TCP Output Host</label>
+                                <input type="text" id="ipTcpHost" name="tcpOutHost" 
+                                       required value="127.0.0.1" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="ipTcpPort" class="form-label">TCP Output Port</label>
+                                <input type="number" id="ipTcpPort" name="tcpOutPort" 
+                                       required value="4001" min="1" max="65535" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="window.app?.closeModal('ipConfigModal')">
+                        <span class="btn-icon">❌</span>
+                        <span>Cancel</span>
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-pulse">
+                        <span class="btn-icon">💾</span>
+                        <span>Save Configuration</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-container">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <span class="modal-icon">❓</span>
+                    <div class="modal-title-text">
+                        <h3 id="confirmTitle">Confirm Action</h3>
+                        <p id="confirmSubtitle">Please confirm your action</p>
+                    </div>
+                </div>
+                <button class="modal-close" type="button">
+                    <span>✕</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.app?.closeModal('confirmModal')">
+                    <span class="btn-icon">❌</span>
+                    <span>Cancel</span>
+                </button>
+                <button type="button" id="confirmOkBtn" class="btn btn-danger">
+                    <span class="btn-icon">✅</span>
+                    <span>Confirm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

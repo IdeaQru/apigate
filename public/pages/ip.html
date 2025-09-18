@@ -1,0 +1,59 @@
+<!-- IP Tab Content -->
+<div class="content-header">
+    <h2>
+        <span class="page-icon">🌐</span>
+        Network Configurations
+    </h2>
+    <div class="header-actions">
+        <button class="btn btn-primary btn-pulse" onclick="window.app?.openModal('ipConfigModal')">
+            <span class="btn-icon">➕</span>
+            <span>New Network Bridge</span>
+        </button>
+    </div>
+</div>
+
+<!-- Network Configurations -->
+<div class="configs-section">
+    <div class="section-header">
+        <h4>
+            <span class="section-icon">🌐</span>
+            Network Bridges
+        </h4>
+    </div>
+    <div id="ipConfigList" class="config-grid">
+        <div class="config-loading">
+            <span class="loading-icon">🌐</span>
+            Loading configurations...
+        </div>
+    </div>
+</div>
+
+<!-- Connection Mode Info -->
+<div class="info-panel">
+    <div class="info-header">
+        <h4>
+            <span class="info-icon">💡</span>
+            Connection Modes
+        </h4>
+    </div>
+    <div class="info-content">
+        <div class="info-item">
+            <div class="info-item-header">
+                <span class="info-item-icon">🔗</span>
+                <span class="info-item-title">TCP Client Mode</span>
+            </div>
+            <p class="info-item-description">
+                Connect to an external TCP server. Use this mode when you want to receive data from a remote server.
+            </p>
+        </div>
+        <div class="info-item">
+            <div class="info-item-header">
+                <span class="info-item-icon">🏢</span>
+                <span class="info-item-title">TCP Server Mode</span>
+            </div>
+            <p class="info-item-description">
+                Listen for incoming TCP connections. Use this mode when you want to receive data from multiple clients.
+            </p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,125 @@
+<!-- Monitor Tab Content -->
+<div class="content-header">
+    <h2>
+        <span class="page-icon">📡</span>
+        Live Monitor
+    </h2>
+    <div class="header-actions">
+        <button id="clearLogs" class="btn btn-outline">
+            <span class="btn-icon">🗑</span>
+            <span>Clear Logs</span>
+        </button>
+        <button id="exportLogs" class="btn btn-outline">
+            <span class="btn-icon">📥</span>
+            <span>Export</span>
+        </button>
+    </div>
+</div>
+
+<div class="monitor-layout">
+    <!-- Terminal -->
+    <div class="terminal-section">
+        <div class="terminal-header">
+            <div class="terminal-controls">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+            </div>
+            <div class="terminal-title">
+                <span class="terminal-icon">💻</span>
+                TCP Bridge Terminal
+            </div>
+            <div class="terminal-actions">
+                <label class="terminal-switch">
+                    <input type="checkbox" id="autoScroll" checked>
+                    <span class="switch-slider"></span>
+                    <span class="switch-label">Auto-scroll</span>
+                </label>
+            </div>
+        </div>
+        <div id="logContainer" class="terminal-content">
+            <div class="terminal-line">
+                <span class="terminal-prompt">[00:00:00]</span>
+                <span class="terminal-type info">INFO</span>
+                <span class="terminal-message">TCP Bridge terminal initialized - Ready for action...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Sidebar -->
+    <div class="stats-sidebar">
+        <div class="stats-panel">
+            <div class="stats-header">
+                <h4>
+                    <span class="section-icon">📈</span>
+                    System Stats
+                </h4>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Messages</span>
+                        <span id="totalMessagesMonitor" class="stat-value">0</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">⏱</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Uptime</span>
+                        <span id="uptime" class="stat-value">00:00:00</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">📡</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Last Activity</span>
+                        <span id="lastActivityMonitor" class="stat-value">Never</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Error Count</span>
+                        <span id="errorCountMonitor" class="stat-value">0</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Speed (msg/min)</span>
+                        <span id="speedMonitor" class="stat-value">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TCP Output Status Panel -->
+        <div class="stats-panel">
+            <div class="stats-header">
+                <h4>
+                    <span class="section-icon">🌉</span>
+                    TCP Output
+                </h4>
+            </div>
+            <div class="tcp-output-details">
+                <div class="tcp-output-item">
+                    <span class="tcp-output-label">Status:</span>
+                    <span id="tcpOutputStatusMonitor" class="tcp-output-value">Disconnected</span>
+                </div>
+                <div class="tcp-output-item">
+                    <span class="tcp-output-label">Target:</span>
+                    <span id="tcpOutputTarget" class="tcp-output-value">Not configured</span>
+                </div>
+                <div class="tcp-output-item">
+                    <span class="tcp-output-label">Queue:</span>
+                    <span id="tcpOutputQueue" class="tcp-output-value">0</span>
+                </div>
+                <div class="tcp-output-item">
+                    <span class="tcp-output-label">Sent:</span>
+                    <span id="tcpOutputSent" class="tcp-output-value">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

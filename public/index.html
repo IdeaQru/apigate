@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SERIAL OR IP COMMAND CENTER TO TCP</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/style.css">
+   
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTEgMTVoLTJ2LTJoMnYyem0wLTRoLTJWN2gydjZ6IiBmaWxsPSIjZmY2ZGE3Ii8+PC9zdmc+">
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner-ring">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="loading-text">
+                <h3>Initializing Dark Bridge</h3>
+                <p>Loading Serial/IP to TCP Forwarder...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="appContainer" class="app-container" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Logo & Status -->
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <div class="logo-pulse"></div>
+                        <span class="logo-symbol">⚡</span>
+                    </div>
+                    <div class="logo-text">
+                        <h2>Forwarder TCP IP</h2>
+                        <p>Serial/IP to TCP</p>
+                    </div>
+                </div>
+            </div>
+
+            
+
+         
+
+            <!-- Navigation -->
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Mission Control</span>
+                    <div class="nav-glow"></div>
+                </a>
+                <a href="#" class="nav-item" data-tab="serial">
+                    <span class="nav-icon">🔌</span>
+                    <span class="nav-text">Serial Ports</span>
+                    <div class="nav-glow"></div>
+                </a>
+                <a href="#" class="nav-item" data-tab="ip">
+                    <span class="nav-icon">🌐</span>
+                    <span class="nav-text">Network Configs</span>
+                    <div class="nav-glow"></div>
+                </a>
+                <a href="#" class="nav-item" data-tab="monitor">
+                    <span class="nav-icon">📡</span>
+                    <span class="nav-text">Live Monitor</span>
+                    <div class="nav-glow"></div>
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div class="uptime-display">
+                    <span class="uptime-label">Uptime</span>
+                    <span id="uptimeDisplay" class="uptime-value">00:00:00</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="breadcrumb">
+                    <div class="breadcrumb-icon">🎯</div>
+                    <span id="currentPage">Mission Control</span>
+                </div>
+           
+            </header>
+
+            <!-- Tab Contents -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div id="dashboardTab" class="tab-content active">
+                    <!-- Content akan dimuat dari dashboard.html -->
+                </div>
+
+                <!-- Serial Tab -->
+                <div id="serialTab" class="tab-content">
+                    <!-- Content akan dimuat dari serial.html -->
+                </div>
+
+                <!-- IP Tab -->
+                <div id="ipTab" class="tab-content">
+                    <!-- Content akan dimuat dari ip.html -->
+                </div>
+
+                <!-- Monitor Tab -->
+                <div id="monitorTab" class="tab-content">
+                    <!-- Content akan dimuat dari monitor.html -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modalsContainer">
+        <!-- Modals akan dimuat dari modals.html -->
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Background Effects -->
+    <div class="bg-effects">
+        <div class="bg-grid"></div>
+        <div class="bg-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+   <!-- JavaScript Files - URUTAN YANG BENAR -->
+
+<!-- 1. UTILITIES & CONSTANTS - Harus pertama -->
+<script src="js/utils/constants.js"></script>
+<script src="js/utils/helpers.js"></script>
+
+<!-- 2. SERVICES - Setelah utilities tersedia -->
+<!-- API Services - Load in correct order -->
+<script src="js/services/ApiUtils.js"></script>
+<script src="js/services/ApiCore.js"></script>
+<script src="js/services/ApiSerialConfig.js"></script>
+<script src="js/services/ApiIpConfig.js"></script>
+<script src="js/services/ApiSystemInfo.js"></script>
+<script src="js/services/ApiControlOps.js"></script>
+<script src="js/services/ApiService.js"></script> <!-- Main service - load last -->
+
+<!-- 3. COMPONENTS - Setelah services tersedia -->
+<script src="js/components/toast.js"></script>
+<script src="js/components/modal.js"></script>
+<script src="js/components/chart.js"></script>
+
+<!-- 4. PAGES - Setelah components tersedia -->
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/serial.js"></script>
+<script src="js/pages/ip.js"></script>
+<script src="js/pages/monitor.js"></script>
+
+<!-- 5. NAVIGATION - Setelah pages tersedia -->
+<script src="js/navigation.js"></script>
+
+<!-- 6. MAIN APP - Terakhir, mengkoordinasi semua -->
+<script src="js/app.js"></script>
+
+</body>
+</html>

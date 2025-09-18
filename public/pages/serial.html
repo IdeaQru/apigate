@@ -1,0 +1,53 @@
+<!-- Serial Tab Content -->
+<div class="content-header">
+    <h2>
+        <span class="page-icon">🔌</span>
+        Serial Port Configurations
+    </h2>
+    <div class="header-actions">
+        <button id="refreshPortsSerial" class="btn btn-outline btn-glow">
+            <span class="btn-icon">🔄</span>
+            <span>Scan Ports</span>
+        </button>
+        <button class="btn btn-primary btn-pulse" onclick="window.app?.openModal('serialConfigModal')">
+            <span class="btn-icon">➕</span>
+            <span>New Serial Bridge</span>
+        </button>
+    </div>
+</div>
+
+<!-- Available Ports Display -->
+<div class="ports-scanner">
+    <div class="scanner-header">
+        <h4>
+            <span class="section-icon">🔍</span>
+            Port Scanner
+        </h4>
+        <div class="scanner-status">
+            <div class="scanner-dot"></div>
+            <span>Scanning...</span>
+        </div>
+    </div>
+    <div id="availablePortsList" class="ports-grid">
+        <div class="port-scanner-loading">
+            <span class="loading-icon">🔍</span>
+            Detecting available ports...
+        </div>
+    </div>
+</div>
+
+<!-- Serial Configurations -->
+<div class="configs-section">
+    <div class="section-header">
+        <h4>
+            <span class="section-icon">⚙️</span>
+            Serial Bridges
+        </h4>
+    </div>
+    <div id="serialConfigList" class="config-grid">
+        <div class="config-loading">
+            <span class="loading-icon">⚙️</span>
+            Loading configurations...
+        </div>
+    </div>
+</div>

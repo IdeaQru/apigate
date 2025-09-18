@@ -1,0 +1,556 @@
+<!-- Dashboard Content -->
+<div class="mission-control-container">
+    <!-- Mission Control Sub-Navigation -->
+    <div class="mission-control-nav">
+        <button class="mission-tab-btn active" data-mission-tab="overview">
+            <span class="mission-tab-icon">📈</span>
+            <span class="mission-tab-text">System Overview</span>
+        </button>
+        <button class="mission-tab-btn" data-mission-tab="performance">
+            <span class="mission-tab-icon">⚡</span>
+            <span class="mission-tab-text">Performance Monitor</span>
+        </button>
+        <button class="mission-tab-btn" data-mission-tab="commands">
+            <span class="mission-tab-icon">🎮</span>
+            <span class="mission-tab-text">Command Center</span>
+        </button>
+    </div>
+
+    <!-- Mission Control Content -->
+    <div class="mission-control-content">
+        <!-- Overview Tab -->
+        <div id="missionOverviewTab" class="mission-tab-content active">
+            <!-- Hero Stats -->
+            <div class="hero-stats">
+                <div class="stat-card stat-primary">
+                    <div class="stat-icon">🔌</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="serialCount" data-raw="0">0</div>
+                        <div class="stat-label">Serial Bridges</div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: 60%"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-success">
+                    <div class="stat-icon">🌐</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="ipCount" data-raw="0">0</div>
+                        <div class="stat-label">Network Configs</div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: 75%"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-warning">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="activeCount" data-raw="0">0</div>
+                        <div class="stat-label">Active Streams</div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: 30%"></div>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-info">
+                    <div class="stat-icon">📨</div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="messageCount" data-raw="0">0</div>
+                        <div class="stat-label">Messages Today</div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: 90%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed Overview Cards -->
+            <div class="speed-overview">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">🚀</span>
+                        Message Speed Overview
+                    </h3>
+                </div>
+                <div class="speed-cards-grid">
+                    <div class="speed-card speed-current">
+                        <div class="speed-card-icon">🚀</div>
+                        <div class="speed-card-content">
+                            <div class="speed-card-number" id="speedCurrent" data-raw="0">0</div>
+                            <div class="speed-card-unit">msg/min</div>
+                            <div class="speed-card-label">Current Speed</div>
+                        </div>
+                        <div class="speed-card-trend" id="speedCurrentTrend">
+                            <span class="trend-icon">📈</span>
+                            <span class="trend-text">+0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-card speed-average">
+                        <div class="speed-card-icon">📊</div>
+                        <div class="speed-card-content">
+                            <div class="speed-card-number" id="speedAverage" data-raw="0">0</div>
+                            <div class="speed-card-unit">msg/min</div>
+                            <div class="speed-card-label">Average Speed</div>
+                        </div>
+                        <div class="speed-card-trend" id="speedAverageTrend">
+                            <span class="trend-icon">📊</span>
+                            <span class="trend-text">Session</span>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-card speed-peak">
+                        <div class="speed-card-icon">🏆</div>
+                        <div class="speed-card-content">
+                            <div class="speed-card-number" id="speedPeak" data-raw="0">0</div>
+                            <div class="speed-card-unit">msg/min</div>
+                            <div class="speed-card-label">Peak Speed</div>
+                        </div>
+                        <div class="speed-card-trend" id="speedPeakTrend">
+                            <span class="trend-icon">🏆</span>
+                            <span class="trend-text">Best</span>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-card speed-total">
+                        <div class="speed-card-icon">📈</div>
+                        <div class="speed-card-content">
+                            <div class="speed-card-number" id="msgTotal" data-raw="0">0</div>
+                            <div class="speed-card-unit">messages</div>
+                            <div class="speed-card-label">Total Processed</div>
+                        </div>
+                        <div class="speed-card-trend" id="msgTotalTrend">
+                            <span class="trend-icon">✅</span>
+                            <span class="trend-text">Session</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health Grid -->
+            <div class="system-health-grid">
+                <!-- Active Connection Status -->
+                <div class="health-card">
+                    <div class="health-header">
+                        <h4>
+                            <span class="health-icon">🔗</span>
+                            Active Connection
+                        </h4>
+                        <div class="health-status" id="connectionHealthStatus">
+                            <span class="status-dot offline"></span>
+                            <span>Offline</span>
+                        </div>
+                    </div>
+                    <div id="activeConnectionDetails" class="health-content">
+                        <div class="health-item">
+                            <span class="health-label">Bridge Type:</span>
+                            <span class="health-value">None</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Source:</span>
+                            <span class="health-value">Not connected</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Target:</span>
+                            <span class="health-value">Not configured</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="health-card">
+                    <div class="health-header">
+                        <h4>
+                            <span class="health-icon">📊</span>
+                            Recent Activity
+                        </h4>
+                    </div>
+                    <div id="recentActivity" class="activity-list compact">
+                        <div class="activity-item">
+                            <div class="activity-icon">🌟</div>
+                            <div class="activity-content">
+                                <p>TCP Bridge ready for action</p>
+                                <small>System initialized and waiting for commands</small>
+                            </div>
+                            <div class="activity-time">ready</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Chart -->
+            <div class="mini-chart-container">
+                <div class="chart-header">
+                    <h4>
+                        <span class="chart-icon">📈</span>
+                        Speed Trend (Last 5 Minutes)
+                    </h4>
+                    <div class="chart-controls">
+                        <button class="chart-control-btn active" data-period="5min">5min</button>
+                        <button class="chart-control-btn" data-period="1hour">1h</button>
+                        <button class="chart-control-btn" data-period="1day">1d</button>
+                    </div>
+                </div>
+                <div class="mini-chart-wrapper">
+                    <canvas id="miniSpeedChart" width="800" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Tab -->
+        <div id="missionPerformanceTab" class="mission-tab-content">
+            <!-- Detailed Speed Monitor -->
+            <div class="speed-monitor-detailed">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">⚡</span>
+                        Detailed Performance Analytics
+                    </h3>
+                </div>
+                
+                <!-- Speed Stats Grid -->
+                <div class="speed-stats-grid">
+                    <div class="speed-stat-card primary">
+                        <div class="speed-stat-icon">🚀</div>
+                        <div class="speed-stat-content">
+                            <div class="speed-stat-number" id="currentSpeed" data-raw="0">0</div>
+                            <div class="speed-stat-unit">msg/min</div>
+                            <div class="speed-stat-label">Current Speed</div>
+                            <div class="speed-stat-sublabel">Real-time rate</div>
+                        </div>
+                        <div class="speed-stat-progress">
+                            <div class="speed-stat-progress-bar" id="currentSpeedBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-stat-card success">
+                        <div class="speed-stat-icon">📊</div>
+                        <div class="speed-stat-content">
+                            <div class="speed-stat-number" id="averageSpeed" data-raw="0">0</div>
+                            <div class="speed-stat-unit">msg/min</div>
+                            <div class="speed-stat-label">Average Speed</div>
+                            <div class="speed-stat-sublabel">Session average</div>
+                        </div>
+                        <div class="speed-stat-progress">
+                            <div class="speed-stat-progress-bar" id="averageSpeedBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-stat-card warning">
+                        <div class="speed-stat-icon">🏆</div>
+                        <div class="speed-stat-content">
+                            <div class="speed-stat-number" id="peakSpeed" data-raw="0">0</div>
+                            <div class="speed-stat-unit">msg/min</div>
+                            <div class="speed-stat-label">Peak Speed</div>
+                            <div class="speed-stat-sublabel">Session best</div>
+                        </div>
+                        <div class="speed-stat-progress">
+                            <div class="speed-stat-progress-bar" id="peakSpeedBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="speed-stat-card info">
+                        <div class="speed-stat-icon">📈</div>
+                        <div class="speed-stat-content">
+                            <div class="speed-stat-number" id="totalMessages" data-raw="0">0</div>
+                            <div class="speed-stat-unit">messages</div>
+                            <div class="speed-stat-label">Total Messages</div>
+                            <div class="speed-stat-sublabel">This session</div>
+                        </div>
+                        <div class="speed-stat-progress">
+                            <div class="speed-stat-progress-bar" id="totalMessagesBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Speed Chart -->
+                <div class="speed-chart-container">
+                    <div class="chart-header">
+                        <h4>Speed History & Analytics</h4>
+                        <div class="chart-controls">
+                            <button class="chart-control-btn active" data-chart="speed">Speed</button>
+                            <button class="chart-control-btn" data-chart="volume">Volume</button>
+                            <button class="chart-control-btn" data-chart="types">Types</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="speedChart" width="800" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Type Breakdown -->
+            <div class="message-breakdown">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">📊</span>
+                        Message Type Analysis
+                    </h3>
+                </div>
+                <div class="breakdown-grid">
+                    <div class="breakdown-card">
+                        <div class="breakdown-header">
+                            <span class="breakdown-icon">🚢</span>
+                            <span class="breakdown-title">AIS Maritime</span>
+                        </div>
+                        <div class="breakdown-stats">
+                            <div class="breakdown-number" id="aisCount" data-raw="0">0</div>
+                            <div class="breakdown-percentage" id="aisPercentage">0%</div>
+                        </div>
+                        <div class="breakdown-progress">
+                            <div class="breakdown-progress-bar" id="aisProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="breakdown-card">
+                        <div class="breakdown-header">
+                            <span class="breakdown-icon">🛰</span>
+                            <span class="breakdown-title">GNSS GPS</span>
+                        </div>
+                        <div class="breakdown-stats">
+                            <div class="breakdown-number" id="gnssCount" data-raw="0">0</div>
+                            <div class="breakdown-percentage" id="gnssPercentage">0%</div>
+                        </div>
+                        <div class="breakdown-progress">
+                            <div class="breakdown-progress-bar" id="gnssProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="breakdown-card">
+                        <div class="breakdown-header">
+                            <span class="breakdown-icon">📡</span>
+                            <span class="breakdown-title">Serial Data</span>
+                        </div>
+                        <div class="breakdown-stats">
+                            <div class="breakdown-number" id="serialDataCount" data-raw="0">0</div>
+                            <div class="breakdown-percentage" id="serialDataPercentage">0%</div>
+                        </div>
+                        <div class="breakdown-progress">
+                            <div class="breakdown-progress-bar" id="serialDataProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="breakdown-card">
+                        <div class="breakdown-header">
+                            <span class="breakdown-icon">📄</span>
+                            <span class="breakdown-title">Generic Data</span>
+                        </div>
+                        <div class="breakdown-stats">
+                            <div class="breakdown-number" id="dataCount" data-raw="0">0</div>
+                            <div class="breakdown-percentage" id="dataPercentage">0%</div>
+                        </div>
+                        <div class="breakdown-progress">
+                            <div class="breakdown-progress-bar" id="dataProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Performance Metrics -->
+            <div class="performance-metrics">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">🔧</span>
+                        System Performance Metrics
+                    </h3>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-icon">⏱</span>
+                            <span class="metric-title">Session Uptime</span>
+                        </div>
+                        <div class="metric-value" id="sessionUptime">00:00:00</div>
+                        <div class="metric-subtitle">Current session duration</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-icon">🖥</span>
+                            <span class="metric-title">System Uptime</span>
+                        </div>
+                        <div class="metric-value" id="systemUptime">00:00:00</div>
+                        <div class="metric-subtitle">Application runtime</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-icon">📡</span>
+                            <span class="metric-title">Last Activity</span>
+                        </div>
+                        <div class="metric-value" id="lastActivity">Never</div>
+                        <div class="metric-subtitle">Most recent message</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-icon">⚠️</span>
+                            <span class="metric-title">Error Count</span>
+                        </div>
+                        <div class="metric-value" id="errorCount" data-raw="0">0</div>
+                        <div class="metric-subtitle">Session errors</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-icon">🔄</span>
+                            <span class="metric-title">Reconnects</span>
+                        </div>
+                        <div class="metric-value" id="reconnectCount" data-raw="0">0</div>
+                        <div class="metric-subtitle">Connection recoveries</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-icon">📊</span>
+                            <span class="metric-title">Unique Messages</span>
+                        </div>
+                        <div class="metric-value" id="uniqueMessages" data-raw="0">0</div>
+                        <div class="metric-subtitle">Distinct message content</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commands Tab -->
+        <div id="missionCommandsTab" class="mission-tab-content">
+            <!-- Command Center -->
+            <div class="command-center-compact">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">🎮</span>
+                        Command Center
+                    </h3>
+                </div>
+                <div class="command-grid">
+                    <button class="command-btn" onclick="window.modalManager?.open('serialConfigModal')">
+                        <div class="command-icon">🔌</div>
+                        <div class="command-text">
+                            <span class="command-title">Add Serial</span>
+                            <span class="command-subtitle">Configure serial port</span>
+                        </div>
+                    </button>
+                    <button class="command-btn" onclick="window.modalManager?.open('ipConfigModal')">
+                        <div class="command-icon">🌐</div>
+                        <div class="command-text">
+                            <span class="command-title">Add Network</span>
+                            <span class="command-subtitle">Configure IP connection</span>
+                        </div>
+                    </button>
+                    <button class="command-btn" id="refreshPortsCmd">
+                        <div class="command-icon">🔄</div>
+                        <div class="command-text">
+                            <span class="command-title">Scan Ports</span>
+                            <span class="command-subtitle">Detect available ports</span>
+                        </div>
+                    </button>
+                    <button class="command-btn" onclick="window.navigationManager?.switchTab('monitor')">
+                        <div class="command-icon">📡</div>
+                        <div class="command-text">
+                            <span class="command-title">Live Monitor</span>
+                            <span class="command-subtitle">View real-time logs</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">⚡</span>
+                        Quick Actions
+                    </h3>
+                </div>
+                <div class="quick-actions-grid">
+                    <button class="quick-action-btn" id="emergencyStopBtn">
+                        <span class="quick-action-icon">🛑</span>
+                        <span class="quick-action-text">Emergency Stop</span>
+                    </button>
+                    <button class="quick-action-btn" id="restartAllBtn">
+                        <span class="quick-action-icon">🔄</span>
+                        <span class="quick-action-text">Restart All</span>
+                    </button>
+                    <button class="quick-action-btn" id="clearLogsBtn">
+                        <span class="quick-action-icon">🗑</span>
+                        <span class="quick-action-text">Clear Logs</span>
+                    </button>
+                    <button class="quick-action-btn" id="exportDataBtn">
+                        <span class="quick-action-icon">📥</span>
+                        <span class="quick-action-text">Export Data</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuration Overview -->
+            <div class="config-overview">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">⚙️</span>
+                        Configuration Overview
+                    </h3>
+                </div>
+                <div class="config-summary-grid">
+                    <div class="config-summary-card">
+                        <div class="config-summary-header">
+                            <span class="config-summary-icon">🔌</span>
+                            <span class="config-summary-title">Serial Configurations</span>
+                        </div>
+                        <div class="config-summary-stats">
+                            <div class="config-stat">
+                                <span class="config-stat-value" id="serialConfigsTotal" data-raw="0">0</span>
+                                <span class="config-stat-label">Total</span>
+                            </div>
+                            <div class="config-stat">
+                                <span class="config-stat-value" id="serialConfigsActive" data-raw="0">0</span>
+                                <span class="config-stat-label">Active</span>
+                            </div>
+                        </div>
+                        <button class="config-summary-btn" onclick="window.navigationManager?.switchTab('serial')">
+                            View All →
+                        </button>
+                    </div>
+                    <div class="config-summary-card">
+                        <div class="config-summary-header">
+                            <span class="config-summary-icon">🌐</span>
+                            <span class="config-summary-title">Network Configurations</span>
+                        </div>
+                        <div class="config-summary-stats">
+                            <div class="config-stat">
+                                <span class="config-stat-value" id="ipConfigsTotal" data-raw="0">0</span>
+                                <span class="config-stat-label">Total</span>
+                            </div>
+                            <div class="config-stat">
+                                <span class="config-stat-value" id="ipConfigsActive" data-raw="0">0</span>
+                                <span class="config-stat-label">Active</span>
+                            </div>
+                        </div>
+                        <button class="config-summary-btn" onclick="window.navigationManager?.switchTab('ip')">
+                            View All →
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Port Scanner -->
+            <div class="port-scanner">
+                <div class="section-header">
+                    <h3>
+                        <span class="section-icon">🔍</span>
+                        Port Scanner
+                    </h3>
+                    <div class="scanner-status">
+                        <span class="scanner-dot"></span>
+                        <span>Ready to scan</span>
+                    </div>
+                </div>
+                <div id="dashboardPortsList" class="ports-list">
+                    <!-- Ports will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
