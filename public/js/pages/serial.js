@@ -693,22 +693,6 @@ class SerialPageManager {
             return `${emoji} ${lockInfo.configName}: ${lockInfo.state.toUpperCase()} (${timeDiff}s)`;
         }).join('<br>');
 
-        const summaryHTML = `
-            <div class="lock-status-summary alert alert-info">
-                <h5>💾 Enhanced Serial Manager</h5>
-                <div style="font-family: monospace; font-size: 0.9em;">
-                    ${lockSummary}
-                </div>
-                <p><small>💾 Persistent states | 🔄 Auto-sync | 🔍 Complete verification</small></p>
-            </div>
-        `;
-
-        const existingSummary = container.querySelector('.lock-status-summary');
-        if (existingSummary) {
-            existingSummary.outerHTML = summaryHTML;
-        } else {
-            container.insertAdjacentHTML('afterbegin', summaryHTML);
-        }
     }
 
     renderAvailablePorts() {
