@@ -1,30 +1,332 @@
-// Serial Page Management - SCOPED EVENT HANDLERS
+// Serial Page Management - ENHANCED with STOP + PERSISTENT STATE
 class SerialPageManager {
     constructor() {
         this.configs = [];
         this.availablePorts = [];
+        this.lockedStates = new Map(); // ✅ NEW: Lock state management
         this.isInitialized = false;
         this.isLoading = false;
-        this.namespace = 'serial'; // Namespace identifier
+        this.namespace = 'serial';
+        this.statusUpdateInterval = null; // ✅ NEW: Status monitoring
+        this.debugMode = true; // ✅ NEW: Debug logging
         this.init();
     }
 
     init() {
+        // ✅ PERSISTENCE: Load saved states first
+        this.loadPersistentStates();
+        
         this.setupEventListeners();
+        this.startEnhancedMonitoring();
+        
         window.addEventListener('tabChanged', (e) => {
             if (e.detail.tab === 'serial') {
                 this.onSerialPageActivated();
             }
         });
+        
+        // ✅ PERSISTENCE: Save states before page unload
+        window.addEventListener('beforeunload', () => {
+            this.savePersistentStates();
+        });
+        
         this.isInitialized = true;
-        console.log('🔌 Serial Page Manager initialized with namespace:', this.namespace);
+        this.log('🔌 Serial Manager initialized with PERSISTENT STATE + STOP functionality');
+    }
+
+    // ✅ DEBUG LOGGING
+    log(message, ...args) {
+        if (this.debugMode) {
+            console.log(`[SerialManager] ${message}`, ...args);
+        }
+    }
+
+    // ✅ PERSISTENCE: Save lock states to localStorage
+    savePersistentStates() {
+        try {
+            const lockData = Array.from(this.lockedStates.entries()).map(([id, info]) => [id, {
+                ...info,
+                timestamp: Date.now(),
+                persistent: true
+            }]);
+            
+            localStorage.setItem('serialManager_lockStates', JSON.stringify(lockData));
+            localStorage.setItem('serialManager_lastSave', Date.now().toString());
+            
+            this.log(`💾 Saved ${lockData.length} persistent states`);
+        } catch (error) {
+            console.warn('⚠️ Failed to save persistent states:', error);
+        }
+    }
+
+    // ✅ PERSISTENCE: Load lock states from localStorage
+    loadPersistentStates() {
+        try {
+            const lockData = localStorage.getItem('serialManager_lockStates');
+            const lastSave = localStorage.getItem('serialManager_lastSave');
+            
+            if (lockData && lastSave) {
+                const saveTime = parseInt(lastSave);
+                const timeDiff = Date.now() - saveTime;
+                
+                // Only restore if saved recently (within 2 hours)
+                if (timeDiff < 7200000) { // 2 hours
+                    const parsed = JSON.parse(lockData);
+                    this.lockedStates = new Map(parsed);
+                    
+                    this.log(`💾 Restored ${this.lockedStates.size} persistent states (${Math.round(timeDiff / 1000)}s ago)`);
+                    
+                    if (this.lockedStates.size > 0) {
+                        this.log('🔒 RESTORED SERIAL STATES:');
+                        this.lockedStates.forEach((info, configId) => {
+                            this.log(`  ${info.configName}: ${info.state} (${info.reason})`);
+                        });
+                    }
+                    return true;
+                } else {
+                    this.log('⏰ Saved states too old, clearing...');
+                    this.clearPersistentStates();
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to load persistent states:', error);
+            this.clearPersistentStates();
+        }
+        return false;
+    }
+
+    clearPersistentStates() {
+        try {
+            localStorage.removeItem('serialManager_lockStates');
+            localStorage.removeItem('serialManager_lastSave');
+            this.log('🧹 Cleared persistent states');
+        } catch (error) {
+            console.warn('⚠️ Failed to clear persistent states:', error);
+        }
+    }
+
+    // ✅ ENHANCED MONITORING
+    startEnhancedMonitoring() {
+        this.statusUpdateInterval = setInterval(async () => {
+            try {
+                await this.performEnhancedStatusCheck();
+            } catch (error) {
+                console.warn('⚠️ Serial enhanced monitoring error:', error);
+            }
+        }, 15000); // Every 15 seconds
+        
+        this.log('📊 Enhanced monitoring started');
+    }
+
+    async performEnhancedStatusCheck() {
+        try {
+            const lockedCount = this.lockedStates.size;
+            
+            // Get backend status
+            const status = await window.apiService.getStatus();
+            
+            this.log('📊 STATUS CHECK:', {
+                lockedStates: lockedCount,
+                backendInstances: status.totalInstances,
+                backendActive: status.activeInstances,
+                instancesArray: status.instances?.length || 0
+            });
+
+            // Check for unknown instances
+            if (status.instances && status.instances.length > 0 && lockedCount === 0) {
+                this.log('🚨 BACKEND HAS INSTANCES BUT FRONTEND HAS NO LOCKS - Syncing...');
+                await this.syncUnknownInstances(status.instances);
+            }
+
+            // Regular sync for unlocked configs
+            this.configs.forEach(config => {
+                if (this.lockedStates.has(config.id)) {
+                    return; // Skip locked configs
+                }
+                
+                const backendRunning = status.instances && 
+                    status.instances.some(inst => 
+                        inst.configId === config.id && 
+                        inst.type === 'serial' && 
+                        inst.status === 'running'
+                    );
+                
+                const currentButtonState = this.getButtonState(config.id);
+                const expectedState = backendRunning ? 'running' : 'stopped';
+                
+                if (currentButtonState !== expectedState) {
+                    this.log(`🔄 SYNC: ${config.name} ${currentButtonState} → ${expectedState}`);
+                    this.setButtonState(config.id, expectedState);
+                }
+            });
+            
+            // Auto-save persistent states
+            if (lockedCount > 0) {
+                this.savePersistentStates();
+            }
+            
+        } catch (error) {
+            console.error('❌ Enhanced status check error:', error);
+        }
+    }
+
+    // ✅ SYNC: Handle unknown backend instances
+    async syncUnknownInstances(backendInstances) {
+        this.log('🔄 SYNCING UNKNOWN SERIAL INSTANCES:', backendInstances.length);
+        
+        for (const instance of backendInstances) {
+            if (instance.type === 'serial' && instance.status === 'running') {
+                const config = this.configs.find(c => c.id === instance.configId);
+                if (config && !this.lockedStates.has(config.id)) {
+                    this.log(`🔒 AUTO-LOCKING discovered serial instance: ${config.name}`);
+                    this.lockState(config.id, 'running', 'auto_discovered');
+                }
+            }
+        }
+    }
+
+    // ✅ LOCK STATE MANAGEMENT
+    lockState(configId, state, reason = 'user_action') {
+        const config = this.configs.find(c => c.id === configId);
+        const configName = config?.name || configId;
+        
+        this.log(`🔒 LOCKING: ${configName} → ${state} (${reason})`);
+        
+        this.lockedStates.set(configId, {
+            state: state,
+            reason: reason,
+            timestamp: Date.now(),
+            configName: configName,
+            locked: true,
+            persistent: true
+        });
+        
+        this.savePersistentStates();
+        this.setButtonState(configId, state);
+    }
+
+    unlockState(configId, reason = 'user_action') {
+        const lockInfo = this.lockedStates.get(configId);
+        if (lockInfo) {
+            this.log(`🔓 UNLOCKING: ${lockInfo.configName} (${reason})`);
+            this.lockedStates.delete(configId);
+            this.savePersistentStates();
+        }
+    }
+
+    // ✅ GET CURRENT BUTTON STATE
+    getButtonState(configId) {
+        const element = document.getElementById(`serial-config-${configId}`);
+        if (!element) return 'unknown';
+        
+        const launchBtn = element.querySelector('.serial-launch-btn, .serial-start-btn');
+        const stopBtn = element.querySelector('.serial-stop-btn');
+        
+        if (stopBtn && stopBtn.style.display !== 'none') {
+            if (stopBtn.disabled) {
+                if (stopBtn.innerHTML.includes('Stopping')) return 'stopping';
+                if (stopBtn.innerHTML.includes('Verifying')) return 'verifying';
+                return 'starting';
+            }
+            return 'running';
+        } else if (launchBtn) {
+            if (launchBtn.disabled) return 'starting';
+            return 'stopped';
+        }
+        
+        return 'unknown';
+    }
+
+    // ✅ SET BUTTON STATE
+    setButtonState(configId, state) {
+        const element = document.getElementById(`serial-config-${configId}`);
+        if (!element) return;
+        
+        const launchBtn = element.querySelector('.serial-launch-btn, .serial-start-btn');
+        const stopBtn = element.querySelector('.serial-stop-btn');
+        const statusBadge = element.querySelector('.status-badge');
+        
+        this.log(`🔧 Setting button: ${configId} → ${state}`);
+        
+        if (launchBtn && stopBtn) {
+            switch (state) {
+                case 'stopped':
+                    launchBtn.style.display = 'inline-flex';
+                    launchBtn.disabled = false;
+                    launchBtn.innerHTML = '<span class="btn-icon">▶️</span><span>Launch Serial</span>';
+                    
+                    stopBtn.style.display = 'none';
+                    
+                    element.classList.remove('active', 'running');
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '⚪ OFFLINE';
+                        statusBadge.className = 'status-badge status-inactive';
+                    }
+                    break;
+                    
+                case 'starting':
+                    launchBtn.style.display = 'inline-flex';
+                    launchBtn.disabled = true;
+                    launchBtn.innerHTML = '<span class="btn-icon">⏳</span><span>Starting...</span>';
+                    
+                    stopBtn.style.display = 'none';
+                    
+                    element.classList.add('active');
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '🟡 STARTING';
+                        statusBadge.className = 'status-badge status-warning';
+                    }
+                    break;
+                    
+                case 'running':
+                    launchBtn.style.display = 'none';
+                    
+                    stopBtn.style.display = 'inline-flex';
+                    stopBtn.disabled = false;
+                    stopBtn.innerHTML = '<span class="btn-icon">⏹️</span><span>Stop Serial</span>';
+                    
+                    element.classList.add('active', 'running');
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '🟢 RUNNING';
+                        statusBadge.className = 'status-badge status-active';
+                    }
+                    break;
+                    
+                case 'stopping':
+                    launchBtn.style.display = 'none';
+                    
+                    stopBtn.style.display = 'inline-flex';
+                    stopBtn.disabled = true;
+                    stopBtn.innerHTML = '<span class="btn-icon">⏳</span><span>Stopping...</span>';
+                    
+                    element.classList.add('active');
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '🟡 STOPPING';
+                        statusBadge.className = 'status-badge status-warning';
+                    }
+                    break;
+                    
+                case 'verifying':
+                    launchBtn.style.display = 'none';
+                    
+                    stopBtn.style.display = 'inline-flex';
+                    stopBtn.disabled = true;
+                    stopBtn.innerHTML = '<span class="btn-icon">🔍</span><span>Verifying...</span>';
+                    
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '🔍 VERIFYING';
+                        statusBadge.className = 'status-badge status-warning';
+                    }
+                    break;
+            }
+        }
     }
 
     setupEventListeners() {
         // Refresh ports button - SPECIFIC SCOPE
         document.addEventListener('click', (e) => {
             if (e.target.closest('#refreshPortsSerial, #refreshPortsCmd')) {
-                console.log('🔌 Serial: Refresh ports clicked');
+                this.log('🔌 Refresh ports clicked');
                 this.refreshPorts();
             }
         });
@@ -33,7 +335,7 @@ class SerialPageManager {
         document.addEventListener('submit', (e) => {
             if (e.target.id === 'serialConfigForm') {
                 e.preventDefault();
-                console.log('🔌 Serial: Form submission intercepted');
+                this.log('🔌 Form submission intercepted');
                 this.saveSerialConfig();
             }
         });
@@ -70,7 +372,7 @@ class SerialPageManager {
                 return;
             }
 
-            console.log('🔌 Serial: Button clicked for config:', configId);
+            this.log('🔌 Button clicked for config:', configId);
 
             // Ensure data sync
             await this.ensureDataSync();
@@ -84,11 +386,11 @@ class SerialPageManager {
                 return;
             }
 
-            console.log('✅ Serial: Config found:', config.name);
+            this.log('✅ Config found:', config.name);
 
             // Determine action with namespace check
             const action = this.determineAction(e.target);
-            console.log('🎬 Serial: Action determined:', action);
+            this.log('🎬 Action determined:', action);
 
             if (!action) {
                 console.warn('⚠️ Serial: No action determined');
@@ -107,18 +409,21 @@ class SerialPageManager {
     }
 
     determineAction(target) {
-        // Check for Serial-specific action attributes
+        // ✅ ENHANCED: Include stop action
         if (target.closest('[data-action="launch"][data-config-type="serial"]')) return 'launch';
+        if (target.closest('[data-action="stop"][data-config-type="serial"]')) return 'stop';
         if (target.closest('[data-action="edit"][data-config-type="serial"]')) return 'edit';
         if (target.closest('[data-action="delete"][data-config-type="serial"]')) return 'delete';
 
         // Check Serial-specific button classes
-        if (target.closest('.serial-launch-btn')) return 'launch';
+        if (target.closest('.serial-launch-btn, .serial-start-btn')) return 'launch';
+        if (target.closest('.serial-stop-btn')) return 'stop';
         if (target.closest('.serial-edit-btn')) return 'edit';
         if (target.closest('.serial-delete-btn')) return 'delete';
 
         // Fallback with Serial context check
         if (target.closest('.btn-success') && target.closest('.serial-config-item')) return 'launch';
+        if (target.closest('.btn-warning') && target.closest('.serial-config-item')) return 'stop';
         if (target.closest('.btn-primary') && target.closest('.serial-config-item')) return 'edit';
         if (target.closest('.btn-danger') && target.closest('.serial-config-item')) return 'delete';
 
@@ -126,11 +431,14 @@ class SerialPageManager {
     }
 
     async executeAction(action, configId) {
-        console.log(`🎬 Serial: Executing ${action} for config ${configId}`);
+        this.log(`🎬 Executing ${action} for config ${configId}`);
         
         switch (action) {
             case 'launch':
                 await this.startForwardingSerial(configId);
+                break;
+            case 'stop':
+                await this.stopForwardingSerial(configId);
                 break;
             case 'edit':
                 this.editConfig(configId);
@@ -145,7 +453,7 @@ class SerialPageManager {
 
     async ensureDataSync() {
         if (this.isLoading) {
-            console.log('⏳ Serial: Already loading, waiting...');
+            this.log('⏳ Already loading, waiting...');
             while (this.isLoading) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -154,17 +462,65 @@ class SerialPageManager {
 
         const now = Date.now();
         if (this.lastDataLoad && (now - this.lastDataLoad) < 5000) {
-            console.log('📊 Serial: Data is recent');
+            this.log('📊 Data is recent');
             return;
         }
 
-        console.log('🔄 Serial: Syncing data...');
+        this.log('🔄 Syncing data...');
         await this.loadSerialData();
     }
 
     async onSerialPageActivated() {
-        console.log('🔌 Serial page activated');
+        this.log('🔌 Serial page activated');
         await this.loadSerialData();
+        await this.syncWithBackendAfterLoad();
+    }
+
+    // ✅ SYNC: Backend sync after page load
+    async syncWithBackendAfterLoad() {
+        try {
+            this.log('🔄 SYNCING with backend after load...');
+            
+            const status = await window.apiService.getStatus();
+            this.log('📊 Backend status:', {
+                totalInstances: status.totalInstances,
+                activeInstances: status.activeInstances,
+                instancesCount: status.instances?.length || 0
+            });
+            
+            this.configs.forEach(config => {
+                const lockInfo = this.lockedStates.get(config.id);
+                const backendRunning = status.instances && 
+                    status.instances.some(inst => 
+                        inst.configId === config.id && 
+                        inst.type === 'serial' && 
+                        inst.status === 'running'
+                    );
+                
+                this.log(`🔍 SYNC: ${config.name}`, {
+                    locked: lockInfo?.state || 'none',
+                    backend: backendRunning
+                });
+                
+                if (lockInfo) {
+                    this.setButtonState(config.id, lockInfo.state);
+                    
+                    if (lockInfo.state === 'running' && !backendRunning) {
+                        this.log(`⚠️ INCONSISTENCY: ${config.name} locked running but backend stopped`);
+                    } else if (lockInfo.state === 'stopped' && backendRunning) {
+                        this.log(`⚠️ INCONSISTENCY: ${config.name} locked stopped but backend running`);
+                    }
+                } else {
+                    const uiState = backendRunning ? 'running' : 'stopped';
+                    this.setButtonState(config.id, uiState);
+                }
+            });
+            
+            this.log('✅ SYNC COMPLETE');
+            
+        } catch (error) {
+            console.error('❌ Sync after load error:', error);
+        }
     }
 
     async loadSerialData() {
@@ -172,14 +528,14 @@ class SerialPageManager {
 
         try {
             this.isLoading = true;
-            console.log('🔌 Serial: Loading data...');
+            this.log('🔌 Loading data...');
             
             const [configs, ports] = await Promise.all([
                 window.apiService.getSerialConfigs(),
                 window.apiService.getSerialPorts()
             ]);
 
-            console.log('🔌 Serial: Data loaded:', {
+            this.log('🔌 Data loaded:', {
                 configs: configs.length,
                 ports: ports.length
             });
@@ -217,12 +573,23 @@ class SerialPageManager {
             try {
                 const configElement = this.createConfigElement(config, index);
                 container.appendChild(configElement);
+
+                // Apply lock state if exists
+                const lockedState = this.lockedStates.get(config.id);
+                if (lockedState) {
+                    this.setButtonState(config.id, lockedState.state);
+                }
             } catch (error) {
                 console.error('❌ Serial: Error creating config element:', error, config);
             }
         });
 
-        console.log(`✅ Serial: Rendered ${this.configs.length} configurations`);
+        this.log(`✅ Rendered ${this.configs.length} configurations`);
+
+        // Show lock status summary if any locks exist
+        if (this.lockedStates.size > 0) {
+            this.showLockStatusSummary(container);
+        }
     }
 
     createConfigElement(config, index) {
@@ -251,6 +618,10 @@ class SerialPageManager {
         const safeTcpOutHost = config.tcpOutHost || '127.0.0.1';
         const safeTcpOutPort = config.tcpOutPort || 4001;
 
+        // Check if locked
+        const isLocked = this.lockedStates.has(config.id);
+        const lockInfo = isLocked ? this.lockedStates.get(config.id) : null;
+
         div.innerHTML = `
             <div class="config-info">
                 <h4>
@@ -258,21 +629,34 @@ class SerialPageManager {
                     <span class="status-badge ${config.active ? 'status-active' : 'status-inactive'}">
                         ${statusEmoji} ${statusText}
                     </span>
+                    ${isLocked ? `<span class="lock-indicator">🔒 ${lockInfo.state.toUpperCase()}</span>` : ''}
                 </h4>
                 <p><strong>🔌 Port:</strong> ${safeSerialPort} @ ${safeBaudRate} baud</p>
                 <p><strong>🌉 TCP Out:</strong> ${safeTcpOutHost}:${safeTcpOutPort}</p>
                 <p><strong>📅 Created:</strong> ${createdDate}</p>
+                ${isLocked ? `<p><strong>🔒 State:</strong> ${lockInfo.state.toUpperCase()} (${lockInfo.reason}) - PERSISTENT</p>` : ''}
+                <p><strong>💾 Persistence:</strong> Survives refresh + backend sync</p>
                 <p><strong>🆔 ID:</strong> <code title="${config.id}">${config.id.substring(0, 8)}...</code></p>
             </div>
             <div class="config-actions">
-                <button class="btn btn-success btn-sm serial-launch-btn" 
+                <button class="btn btn-success btn-sm serial-launch-btn serial-start-btn" 
                         data-action="launch" 
                         data-config-id="${config.id}"
                         data-config-type="serial"
                         data-namespace="serial"
-                        title="Start serial forwarding">
+                        title="Start serial forwarding with PERSISTENCE">
                     <span class="btn-icon">▶️</span>
                     <span>Launch Serial</span>
+                </button>
+                <button class="btn btn-warning btn-sm serial-stop-btn" 
+                        data-action="stop" 
+                        data-config-id="${config.id}"
+                        data-config-type="serial"
+                        data-namespace="serial"
+                        title="Stop serial forwarding"
+                        style="display: none;">
+                    <span class="btn-icon">⏹️</span>
+                    <span>Stop Serial</span>
                 </button>
                 <button class="btn btn-primary btn-sm serial-edit-btn" 
                         data-action="edit" 
@@ -296,6 +680,35 @@ class SerialPageManager {
         `;
 
         return div;
+    }
+
+    // ✅ SHOW LOCK STATUS SUMMARY
+    showLockStatusSummary(container) {
+        const lockSummary = Array.from(this.lockedStates.entries()).map(([configId, lockInfo]) => {
+            const emoji = lockInfo.state === 'running' ? '🟢' : 
+                         lockInfo.state === 'starting' ? '🟡' : 
+                         lockInfo.state === 'stopping' ? '🟠' : 
+                         lockInfo.state === 'verifying' ? '🔍' : '⚪';
+            const timeDiff = Math.round((Date.now() - lockInfo.timestamp) / 1000);
+            return `${emoji} ${lockInfo.configName}: ${lockInfo.state.toUpperCase()} (${timeDiff}s)`;
+        }).join('<br>');
+
+        const summaryHTML = `
+            <div class="lock-status-summary alert alert-info">
+                <h5>💾 Enhanced Serial Manager</h5>
+                <div style="font-family: monospace; font-size: 0.9em;">
+                    ${lockSummary}
+                </div>
+                <p><small>💾 Persistent states | 🔄 Auto-sync | 🔍 Complete verification</small></p>
+            </div>
+        `;
+
+        const existingSummary = container.querySelector('.lock-status-summary');
+        if (existingSummary) {
+            existingSummary.outerHTML = summaryHTML;
+        } else {
+            container.insertAdjacentHTML('afterbegin', summaryHTML);
+        }
     }
 
     renderAvailablePorts() {
@@ -322,7 +735,7 @@ class SerialPageManager {
             container.appendChild(portElement);
         });
 
-        console.log(`✅ Serial: Rendered ${this.availablePorts.length} available ports`);
+        this.log(`✅ Rendered ${this.availablePorts.length} available ports`);
     }
 
     createPortElement(port) {
@@ -375,7 +788,7 @@ class SerialPageManager {
             tcpOutPort: parseInt(formData.get('tcpOutPort')) || 4001
         };
 
-        console.log('💾 Serial: Saving config:', config);
+        this.log('💾 Saving config:', config);
 
         if (!this.validateSerialConfig(config)) return;
 
@@ -389,11 +802,11 @@ class SerialPageManager {
             let result;
 
             if (isEdit) {
-                console.log(`📝 Serial: Updating config: ${isEdit}`);
+                this.log(`📝 Updating config: ${isEdit}`);
                 result = await window.apiService.updateSerialConfig(isEdit, config);
                 window.toastManager?.success(`🔌 Serial bridge "${config.name}" updated successfully!`);
             } else {
-                console.log('➕ Serial: Creating new config');
+                this.log('➕ Creating new config');
                 result = await window.apiService.createSerialConfig(config);
                 window.toastManager?.success(`🔌 Serial bridge "${config.name}" created successfully!`);
             }
@@ -442,7 +855,14 @@ class SerialPageManager {
             return;
         }
 
-        console.log('✏️ Serial: Editing config:', config);
+        // Check if locked
+        if (this.lockedStates.has(configId)) {
+            const lockInfo = this.lockedStates.get(configId);
+            window.toastManager?.warning(`Cannot edit ${config.name} - locked in ${lockInfo.state} state`);
+            return;
+        }
+
+        this.log('✏️ Editing config:', config);
         window.modalManager?.open('serialConfigModal', { data: config });
     }
 
@@ -454,6 +874,21 @@ class SerialPageManager {
             return;
         }
 
+        // Check if locked and running
+        const lockInfo = this.lockedStates.get(configId);
+        if (lockInfo && lockInfo.state === 'running') {
+            const confirmed = await window.modalManager?.confirm(
+                'Stop and Delete Configuration',
+                `"${config.name}" is LOCKED in running state. Stop and delete it?`
+            );
+
+            if (confirmed) {
+                await this.stopForwardingSerial(configId);
+                setTimeout(() => this.deleteConfig(configId), 2000);
+            }
+            return;
+        }
+
         const confirmed = await window.modalManager?.confirm(
             'Delete Serial Configuration',
             `Are you sure you want to delete "${config.name}"? This action cannot be undone and will stop any active forwarding.`
@@ -462,8 +897,9 @@ class SerialPageManager {
         if (!confirmed) return;
 
         try {
-            console.log(`🗑 Serial: Deleting config: ${configId}`);
+            this.log(`🗑 Deleting config: ${configId}`);
             await window.apiService.deleteSerialConfig(configId);
+            this.unlockState(configId, 'config_deleted');
             window.toastManager?.success(`🗑 Serial bridge "${config.name}" deleted successfully!`);
             await this.loadSerialData();
         } catch (error) {
@@ -472,17 +908,25 @@ class SerialPageManager {
         }
     }
 
+    // ✅ START FORWARDING with PERSISTENCE
     async startForwardingSerial(configId) {
         try {
-            console.log(`🎯 Serial: Starting forwarding for: ${configId}`);
+            this.log(`🎯 Starting forwarding for: ${configId}`);
             
             const config = this.configs.find(c => c.id === configId);
             if (!config) {
                 throw new Error(`Serial Configuration ${configId} not found`);
             }
 
-            console.log(`🚀 Serial: Starting forwarding for: ${config.name} (${configId})`);
-            console.log('🔧 Serial: Config details:', {
+            // Check if already locked
+            const currentLock = this.lockedStates.get(configId);
+            if (currentLock && (currentLock.state === 'running' || currentLock.state === 'starting')) {
+                window.toastManager?.warning(`${config.name} is already running or starting`);
+                return;
+            }
+
+            this.log(`🚀 Starting forwarding for: ${config.name} (${configId})`);
+            this.log('🔧 Config details:', {
                 name: config.name,
                 serialPort: config.serialPort,
                 baudRate: config.baudRate,
@@ -499,13 +943,31 @@ class SerialPageManager {
                 throw new Error('Invalid Serial configuration: Missing TCP output');
             }
 
-            // API call with Serial namespace
-            const result = await window.apiService.startForwarding('serial', configId);
-            console.log('✅ Serial: Forwarding started:', result);
+            // Lock as starting
+            this.lockState(configId, 'starting', 'start_requested');
 
-            window.toastManager?.success(`🚀 Serial Bridge "${config.name}" launched successfully!`);
-            
-            await this.loadSerialData();
+            try {
+                // API call with Serial namespace and persistence
+                const result = await window.apiService.startForwarding('serial', configId, {
+                    persistent: true,
+                    autoRestore: true
+                });
+                
+                this.log('✅ Forwarding started:', result);
+
+                // Lock as running
+                this.lockState(configId, 'running', 'start_successful');
+                window.toastManager?.success(`🚀 Serial Bridge "${config.name}" launched and PERSISTED!`);
+                
+                // Verify after delay
+                setTimeout(() => this.verifyInstanceState(configId, 'running'), 3000);
+
+            } catch (apiError) {
+                console.error('❌ Start API error:', apiError);
+                this.unlockState(configId, 'start_failed');
+                this.setButtonState(configId, 'stopped');
+                throw apiError;
+            }
             
         } catch (error) {
             console.error('❌ Serial: Start forwarding error:', error);
@@ -527,9 +989,142 @@ class SerialPageManager {
         }
     }
 
+    // ✅ NEW: STOP FORWARDING with VERIFICATION
+    async stopForwardingSerial(configId) {
+        try {
+            const config = this.configs.find(c => c.id === configId);
+            if (!config) {
+                window.toastManager?.error('Serial Configuration not found');
+                return;
+            }
+
+            const currentLock = this.lockedStates.get(configId);
+            if (!currentLock || currentLock.state !== 'running') {
+                window.toastManager?.warning(`${config.name} is not in locked running state`);
+                return;
+            }
+
+            this.log(`🛑 STOPPING with verification: ${config.name}`);
+            this.lockState(configId, 'stopping', 'stop_requested');
+
+            let stopSuccess = false;
+            const stopMethods = [
+                { name: 'Individual Stop', method: () => window.apiService.stopInstance(`serial_${configId}`) },
+                { name: 'Global Stop', method: () => window.apiService.stopForwarding() },
+                { name: 'Emergency Stop', method: () => window.apiService.emergencyStop() }
+            ];
+
+            for (const stopMethod of stopMethods) {
+                try {
+                    this.log(`🧪 Trying: ${stopMethod.name}`);
+                    await stopMethod.method();
+                    this.log(`✅ ${stopMethod.name} successful`);
+                    stopSuccess = true;
+                    break;
+                } catch (methodError) {
+                    this.log(`⚠️ ${stopMethod.name} failed:`, methodError.message);
+                    continue;
+                }
+            }
+
+            if (!stopSuccess) {
+                throw new Error('All stop methods failed');
+            }
+
+            this.log(`🔍 VERIFYING STOP: ${config.name}`);
+            this.lockState(configId, 'verifying', 'stop_verifying');
+
+            const isStoppedVerified = await this.verifyInstanceStopped(configId, 3);
+
+            if (isStoppedVerified) {
+                this.unlockState(configId, 'stop_verified');
+                this.setButtonState(configId, 'stopped');
+                window.toastManager?.success(`🛑 ${config.name} stopped and VERIFIED!`);
+                this.log(`✅ COMPLETE STOP VERIFIED: ${config.name}`);
+            } else {
+                console.error(`❌ STOP VERIFICATION FAILED: ${config.name}`);
+                this.lockState(configId, 'running', 'stop_verification_failed');
+                window.toastManager?.error(`❌ ${config.name} stop verification failed`);
+            }
+
+        } catch (error) {
+            console.error('❌ Stop forwarding error:', error);
+            this.lockState(configId, 'running', 'stop_error');
+            window.toastManager?.error(`❌ Stop error: ${error.message}`);
+        }
+    }
+
+    // ✅ VERIFY INSTANCE STOPPED
+    async verifyInstanceStopped(configId, maxRetries = 3) {
+        const config = this.configs.find(c => c.id === configId);
+        const configName = config?.name || configId;
+        
+        for (let retry = 1; retry <= maxRetries; retry++) {
+            try {
+                this.log(`🔍 Verification ${retry}/${maxRetries}: ${configName}`);
+                
+                await new Promise(resolve => setTimeout(resolve, 2000 * retry));
+                
+                const status = await window.apiService.getStatus();
+                
+                const stillRunning = status.instances && 
+                    status.instances.some(inst => 
+                        inst.configId === configId && 
+                        inst.type === 'serial' && 
+                        inst.status === 'running'
+                    );
+                
+                if (!stillRunning) {
+                    this.log(`✅ VERIFICATION SUCCESS: ${configName} stopped`);
+                    return true;
+                }
+                
+                this.log(`⚠️ VERIFICATION RETRY ${retry}: ${configName} still running`);
+                
+                if (retry < maxRetries) {
+                    try {
+                        await window.apiService.emergencyStop();
+                    } catch (additionalStopError) {
+                        this.log('Additional stop failed:', additionalStopError.message);
+                    }
+                }
+                
+            } catch (verifyError) {
+                console.error(`❌ Verification attempt ${retry} failed:`, verifyError);
+            }
+        }
+        
+        console.error(`❌ VERIFICATION FAILED: ${configName}`);
+        return false;
+    }
+
+    // ✅ VERIFY INSTANCE STATE
+    async verifyInstanceState(configId, expectedState) {
+        try {
+            const status = await window.apiService.getStatus();
+            const instance = status.instances && 
+                status.instances.find(inst => 
+                    inst.configId === configId && 
+                    inst.type === 'serial'
+                );
+            
+            const config = this.configs.find(c => c.id === configId);
+            const configName = config?.name || configId;
+            
+            if (instance && instance.status === expectedState) {
+                this.log(`✅ STATE VERIFICATION: ${configName} is ${expectedState}`);
+            } else {
+                this.log(`⚠️ STATE VERIFICATION: ${configName} expected ${expectedState}, got ${instance?.status || 'not found'}`);
+            }
+            
+        } catch (error) {
+            console.error('❌ State verification error:', error);
+        }
+    }
+
     async refreshPorts() {
         try {
-            console.log('🔄 Serial: Refreshing ports...');
+            this.log('🔄 Refreshing ports...');
             const ports = await window.apiService.getSerialPorts();
             this.availablePorts = ports || [];
             this.renderAvailablePorts();
@@ -547,7 +1142,7 @@ class SerialPageManager {
                         element.closest('[data-config-id][data-config-type="serial"]')?.dataset.configId ||
                         element.closest('.serial-config-item')?.dataset.configId;
 
-        console.log('🔍 Serial: Extracted config ID:', configId);
+        this.log('🔍 Extracted config ID:', configId);
         return configId;
     }
 
@@ -556,10 +1151,11 @@ class SerialPageManager {
             <div class="empty-state">
                 <div class="empty-state-icon">🔌</div>
                 <h3>No Serial Bridges Configured</h3>
-                <p>Create your first serial port bridge to start forwarding data from hardware devices</p>
+                <p>Create your first serial bridge with enhanced persistent state management</p>
+                <p><small>💾 Persistent states | 🔄 Backend sync | 🔍 Complete verification</small></p>
                 <button class="btn btn-primary btn-pulse" onclick="window.modalManager?.open('serialConfigModal')">
                     <span class="btn-icon">⚡</span>
-                    <span>Create Serial Bridge</span>
+                    <span>Create Enhanced Serial Bridge</span>
                 </button>
             </div>
         `;
@@ -572,7 +1168,22 @@ class SerialPageManager {
             isLoading: this.isLoading,
             configsCount: this.configs.length,
             portsCount: this.availablePorts.length,
+            lockedStatesCount: this.lockedStates.size,
+            persistentStatesCount: Array.from(this.lockedStates.values()).filter(info => info.persistent).length,
             lastDataLoad: this.lastDataLoad,
+            lockedConfigs: Array.from(this.lockedStates.entries()).map(([id, info]) => ({
+                configId: id,
+                configName: info.configName,
+                state: info.state,
+                reason: info.reason,
+                persistent: info.persistent || false,
+                timestamp: info.timestamp,
+                age: Math.round((Date.now() - info.timestamp) / 1000)
+            })),
+            enhanced: true,
+            persistenceEnabled: true,
+            backendSyncEnabled: true,
+            verificationEnabled: true,
             configs: this.configs.map(c => ({ 
                 id: c.id, 
                 name: c.name, 
@@ -584,16 +1195,40 @@ class SerialPageManager {
             }))
         };
     }
+
+    // ✅ FORCE UNLOCK
+    forceUnlock(configId) {
+        const lockInfo = this.lockedStates.get(configId);
+        if (lockInfo) {
+            this.log(`🔓 FORCE UNLOCK: ${lockInfo.configName}`);
+            this.unlockState(configId, 'force_unlock');
+            this.setButtonState(configId, 'stopped');
+            return true;
+        }
+        return false;
+    }
+
+    // ✅ DESTROY
+    destroy() {
+        if (this.statusUpdateInterval) {
+            clearInterval(this.statusUpdateInterval);
+        }
+        
+        this.savePersistentStates();
+        
+        this.lockedStates.clear();
+    }
 }
 
-// Initialize serial page manager
+// Initialize enhanced serial page manager
 window.serialPageManager = new SerialPageManager();
 
-// Namespaced debug helper
+// ✅ ENHANCED DEBUG HELPERS
 window.debugSerial = function() {
-    console.log('=== SERIAL DEBUG ===');
-    console.log('Serial manager:', window.serialPageManager);
-    console.log('Status:', window.serialPageManager?.getStatus());
+    const status = window.serialPageManager?.getStatus();
+    console.log('=== ENHANCED SERIAL DEBUG ===');
+    console.log('Status:', status);
+    console.log('Persistent states:', localStorage.getItem('serialManager_lockStates'));
     
     // Debug DOM vs local data sync
     const serialConfigItems = document.querySelectorAll('.serial-config-item');
@@ -603,7 +1238,40 @@ window.debugSerial = function() {
     console.log('DOM Serial config IDs:', domConfigIds);
     console.log('Local Serial config IDs:', localConfigIds);
     console.log('Serial configs in sync:', JSON.stringify(domConfigIds.sort()) === JSON.stringify(localConfigIds.sort()));
-    console.log('===================');
+    console.log('==============================');
 };
 
-console.log('🔌 Namespaced Serial Page Manager loaded');
+window.clearSerialStates = function() {
+    if (window.serialPageManager) {
+        window.serialPageManager.clearPersistentStates();
+        window.serialPageManager.lockedStates.clear();
+        console.log('🧹 All serial states cleared');
+    }
+};
+
+window.forceSerialSync = async function() {
+    if (window.serialPageManager) {
+        console.log('🔄 Force syncing serial with backend...');
+        await window.serialPageManager.syncWithBackendAfterLoad();
+    }
+};
+
+window.forceKillAllSerial = async function() {
+    console.log('🔥 FORCE KILLING ALL SERIAL...');
+    
+    try {
+        await window.apiService.emergencyStop();
+        
+        if (window.serialPageManager) {
+            window.serialPageManager.configs.forEach(config => {
+                window.serialPageManager.forceUnlock(config.id);
+            });
+        }
+        
+        console.log('🔥 Force kill serial completed');
+    } catch (error) {
+        console.error('❌ Force kill serial error:', error);
+    }
+};
+
+console.log('🔌 ENHANCED Serial Page Manager loaded with STOP + PERSISTENT STATE');
